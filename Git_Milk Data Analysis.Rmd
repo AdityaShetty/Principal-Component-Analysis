@@ -1,13 +1,13 @@
 ---
-title: "Multivariate"
+  title: "Multivariate"
 author: "Aditya Shetty"
 date: "3/19/2022"
 output:
   word_document: default
-  html_document: default
+html_document: default
 ---
-
-```{r setup, include=FALSE}
+  
+  ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -22,24 +22,24 @@ library(e1071)
 ```
 
 ## Introduction:
-    
+
 The data we are going to review is a part of dairy production for different breeds of cows and their characteristics which affect the quality of milk.  
 This data which we are working on was curated for animal breeding purpose.  
 As EU government gives more and more grants to the farmers, they have legal requirements to collect the data. Using the data collected government sanctions them subsidies.  
 Due to this the amount of data collected is growing exponentially.  Ireland exports 90% of the dairy produce to 124 countries and is growing every year, due to which it has become essential and important for recording the data and analyzing.
-  
-  
+
+
 ## Objective we will cover in this project:
-    
+
 -> To understand the data and share our inference to it.  
 -> Create clusters using unsupervised learning methods and compare them (hierarchical and k-means).  
 -> Understanding PCA algorithm and implementing on our given data.  
 -> Predicting value of alpha casin using the MIR spectra data.  
 -> Creating a function which works similar to PLSR and predict.  
-  
+
 ```{r}
 # Loading the data set
-milk<-read.csv("F:/UCD/Sem2/Multi/Milk_MIR_Traits_data.csv")
+milk<-read.csv("C:/Users/Aditya/Downloads/Milk_MIR_Traits_data.csv")
 ```
 
 The data we will be using has dimension 431 rows of data and 582 columns.   It's a wide data.
@@ -54,10 +54,8 @@ We have this data in columns 52 to 582.
 ```{r}
 # Setting up the seed
 set.seed(2100138)
-
 # Generating random number between 1 to n (number of rows)
 n<-sample(1:431,1)
-
 # Deleting a row 
 Deleted_milk<-milk[n,]
 milk<-milk[-n,]
@@ -91,29 +89,20 @@ Once we remove the observations we can observe that there is a difference in val
   
   
 ```{r, warning=FALSE}
-
 ggplot(milk, aes(x=milk$alpha_s1_casein)) +
   xlim(0,50) +
   ylim(0,90) +
   geom_histogram(color="blue", fill="white")
-
-
 std <- sd(milk$alpha_s1_casein, na.rm = TRUE)
 m <- mean(milk$alpha_s1_casein,na.rm = TRUE) 
 lower <- m-3*std
 higher <- m+3*std
-
-
 data <- subset(milk, alpha_s1_casein <= higher & alpha_s1_casein >= lower)
-
 #  2
-
 ggplot(data, aes(x=data$alpha_s1_casein)) +
   xlim(0,50) +
   ylim(0,90) +
   geom_histogram(color="blue", fill="white")
-
-
 ```
 
 
@@ -138,11 +127,9 @@ In single linkage there is a exception of chaining effect.
 
 
 ```{r}
-
 milk_alpha<-data[,52:582]
 ############################
 dist.eucl = dist(milk_alpha, method="euclidean")
-
 E_complete = hclust(dist.eucl, method="complete")
 plot(E_complete)
 ```
@@ -154,17 +141,13 @@ K means method:
 ```{r , echo=FALSE}
 # Initializing Within group sum of squares
 WGSS = rep(0,10)
-
 n = nrow(data)
 WGSS[1] = (n-1) * sum(apply(milk_alpha, 2, var))
-
 for(k in 2:10)
 {
   WGSS[k] = sum(kmeans(milk_alpha, centers = k)$withinss)
 }
-
 plot(1:10, WGSS, type="b", xlab="k", ylab="Within group sum of squares")
-
 ```
   
 Here, Using elbow method we can conclude that we will have 6 or 7 optimal clusters. But since, it decreases very less after 6 to 7. We will conclude that k=6.  
@@ -172,19 +155,15 @@ Here, Using elbow method we can conclude that we will have 6 or 7 optimal cluste
 ```{r}
 k=4
 cl = kmeans(milk_alpha, center=k)
-
 plot(scale(milk_alpha), col = cl$cluster)
 points(cl$centers, col=1:k, pch=8, cex=2)
 ```
 ```{r}
-
 hcl = cutree(E_complete, k=k)
 pcl = kmeans(milk_alpha, centers=k)
 tab = table(hcl, pcl$cluster)
 tab
-
 classAgreement(tab)
-
 ```
   
 As we can see using Rand index we get above 74% match, which is good when we compare hierarchical cluster and K means cluster.
@@ -195,11 +174,9 @@ As we can see using Rand index we get above 74% match, which is good when we com
 
 ```{r}
 pca=prcomp(scale(milk_alpha))
-
 plot(pca, main="Cumulative proportion of the variance" ,xlab="PCA1 -PCA10", xaxt='n')
 axis(1, at = seq(1,11, by = 1.1),labels = 1:10)
 # summary(pca)
-
 ```
   
 As we notice in proportion of Variance the first 4 columns contain (63.70% + 18.76% + 12.69% + 4.078%) 99.228% of the variance.
@@ -216,24 +193,18 @@ Also with the screeplot we can confirm that we can reduce the dimension of colum
 S=cov(milk_alpha)
 #Getting eigen values from covariance matrix E
 eigen=eigen(S)
-
 #Getting eigen vectors
 eigenvectors=eigen$vectors
 #Getting PCS value by data*eigenvectors 
-
 scores<- (as.matrix(scale(milk_alpha, center = TRUE))) %*%  (eigenvectors)
-
 #Using predict function just to compare with our data
 pred<-predict(pca)
-
 par(mfrow=c(1,2))
 barplot(scores, main="PCS scores using eigenvectors from data")
 barplot(pred, main="PCS scores using pred function")
-
 par(mfrow=c(2,1))
 plot(scores[,1], scores[,2], xlab="PC1", ylab="PC2", main = "USING eigenvectors from data to get PCS value")
 plot(pred[,1], pred[,2], xlab="PC1", ylab="PC2", main = "USING In built pred function for PCS")
-
 ```
 
   
@@ -245,17 +216,13 @@ pca$rotation basically returns eigen vectors, if we notice there is a change in 
 We will get exact same figures if we use pca$rotation which is also the eigenvectors of our data.
   
 ```{r}
-
 scores<- (as.matrix(scale(milk_alpha, center = TRUE))) %*%  (pca$rotation)
-
 par(mfrow=c(1,2))
 barplot(scores, main="PCS scores using rotation from prcomp")
 barplot(pred, main="PCS scores using pred function")
-
 par(mfrow=c(2,1))
 plot(scores[,1], scores[,2], xlab="PC1", ylab="PC2", main = "USING rotation from prcomp to get PCS value")
 plot(pred[,1], pred[,2], xlab="PC1", ylab="PC2", main = "USING In built pred function for PCS")
-
 ```
 
   
@@ -277,115 +244,49 @@ Advantages/Disadvantages: Multi-Collinearity disappears since we reduce the dime
 Partial Least Square Regression:
   
 Purpose:The main purpose of it is dimension reduction, Retain majority of the variance and importance while doing so. It doesn't use Principal component but uses latent variables. PLSR is uses target variable along with explanatory values in order to determine the coefficients and intercept value, hence we get better accuracy than PCR.
-  
+
 Description on how method works:   
--> We will divide the dataframe into 2 parts taking one third as test data and two third as train data.  
+  -> We will divide the dataframe into 2 parts taking one third as test data and two third as train data.  
 -> Run PLSR function from pls package with scaling and validation as TRUE.
 -> Select number of latent variables using RMSEP plots where till CV reduces or majoirt variance is covered.  
 -> Calculate the Principal Component Scores using the principal components/columns.
 -> Run PCR function to get target variable response and use K-fold method for cross validation of response.
 Choices we need to make: We need scale and center the data. Selecting number of latent variables based on proportion of variance. If we need k-fold method to cross validate.
-  
+
 Advantages/Disadvantages: Multi-Collinearity disappears since we reduce the dimension and only take ones with majority variance. Better accuracy than PCR because it uses the target variable for training. Disadvantage of PLSR is that it is more prone to overfitting. 
 
-  
 
-  
+
+
 
 ```{r}
 alpha_s1_casein = data[,9:9]
 n=nrow(milk_alpha)
-
 dataPCR <- cbind(alpha_s1_casein,data[,52:582]) 
 dataPCR_train <- dataPCR[1:((2*n/3)-1),]
-
 dataPCR_test <- dataPCR[(2*n/3):n,]
-
 #Model fitting: Training model
-
 plsrs <- plsr(alpha_s1_casein ~.,ncomp=10, data = dataPCR_train , scale = TRUE , validation = "CV")
-
 plot(RMSEP(plsrs), legendpos = "topright")
-
 ```
-  
+
 We will take number of components as 6, because CV-RMSEP reduces till 6 and then starts increasing after that, hence number of latent component selected is 6.
-  
+
 ```{r}
 #Component number 
 plsrs.RMSEP = RMSEP(plsrs, estimate="CV")
-
 min_comp = which.min(plsrs.RMSEP$val)-1
 #We have it
 min_comp
-
 plot(plsrs, ncomp=min_comp, asp=1, line=TRUE)
-
 pls.pred = predict(plsrs, dataPCR_test, ncomp=min_comp)
 #Mean Squared error for our prediction
 sqrt(mean((pls.pred - dataPCR_test$alpha_s1_casein)^2))
-
-
 ```
-  
-
-```{r}
-X <- dataPCR_train[,2:532]
-Y <- dataPCR_train[,1:1]
-X = scale(X)
-Y = scale(Y)
-
-Wn <- list()
-T_list <- list()
-Pn <- list()
-Q <-list()
-E<-list()
-F_list<-list()
 
 
-En = as.matrix(X)
-Fn = as.matrix(Y)
 
-for(i in 1:4)
-{
-S = t(En)%*%Fn
-w = svd(S)$u
-q = svd(S)$v
 
-Tn = En%*%w
-u = Fn%*%q
-
-Tn = Tn/(sqrt((t(Tn)%*%Tn)[1,1]))
-
-p = t(En)%*%Tn
-q = t(Fn)%*%Tn
-
-En = En-Tn%*%t(p)
-Fn = Fn-Tn%*%t(q)
-
-Wn<-cbind(Wn,w)
-T_list<-cbind(T_list,Tn)
-Pn<-cbind(Pn,p)
-Q<-cbind(Q,q)
-}
-
-Wn<-as.matrix(Wn)
-T_list<-as.matrix(T_list)
-Pn<-as.matrix(Pn)
-
-Q<-as.matrix(Q)
-
-Adi <- t(Pn)
-View(Adi)
-View(as.matrix(Wn))
-Adi %*% as.matrix(Wn)
-R= as.matrix(Wn) %*% solve(t(P) %*% Wn)
-
-R = as.matrix(Wn) %*% solve(t(as.matrix(Pn)) , as.matrix(Wn))
-
-```
-  
-  
 ```{r}
 #I am running first iteration outside to create data frame for T,W,Q,P and appending them.
 #From second to 6th iteration I am running it in loop.
@@ -406,14 +307,12 @@ En <- X
 Fn <- Y
 p <- t(as.matrix(En))%*% t
 q <- t(as.matrix(Fn))%*% t
-
 En <- En - t %*% t(p)
 Fn <- Fn - t %*% t(q)
 T <- t
 W <- w
 Q <- q
 P <- p
-
 #Second iteration to sixth component taking previous  as reference
 for (i in 2:6) {
   X <- En
@@ -438,15 +337,10 @@ for (i in 2:6) {
   P <- cbind(P,p)
   
 }
-
-
 R= as.matrix(W) %*% solve(t(as.matrix(P)) %*% as.matrix(W))
 #Calculated the required Coefficients
 B= R %*% t(Q)
-
-
 Pred_Y = as.matrix(X) %*% as.matrix(B)
-
 #Mean square error for showing accuracy
 sqrt(mean((Pred_Y - Y)^2)) 
 summary(Pred_Y)
@@ -456,10 +350,7 @@ summary(Y)
 ```{r}
 #Prediction for test data
 Predicted_test_alpha = as.matrix(dataPCR_test[,2:532]) %*% B 
-
 sqrt(mean((Predicted_test_alpha - dataPCR_test[,1:1])^2))
-
-
 plot(Predicted_test_alpha, type="l",lwd=3, ) #Predicted value
 points(dataPCR_test[,1:1], col='red') #Actual data 
 grid (10,10, lty = 6, col = "cornsilk2")
@@ -468,6 +359,3 @@ summary(dataPCR_test[,1:1])
 ```
 As we can see the minimum and maximum values are in range and they match.  
 In the plot we can see that the lines match and cover most of the actual data, which shows pur prediction was close.
-
-  
-  
